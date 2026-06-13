@@ -18,11 +18,19 @@ waiting_room = []
 active_chats = {}   
 user_states = {}    
 
+AVAILABLE_LANGUAGES = ["Bangla", "English", "Hindi", "Japanese", "Russian", "Arabic", "Spanish", "French", "Korean"]
+
 def main_menu_keyboard():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row(KeyboardButton("🚀 Find Partner"), KeyboardButton("⏭️ Next Partner"))
     markup.row(KeyboardButton("🛑 Stop Chat"), KeyboardButton("⚙️ My Profile & Filters"))
     markup.row(KeyboardButton("💎 Premium"), KeyboardButton("❓ Help"))
+    return markup
+
+def language_keyboard(prefix="reg_lang_"):
+    markup = InlineKeyboardMarkup(row_width=3)
+    buttons = [InlineKeyboardButton(lang, callback_data=f"{prefix}{lang.lower()}") for lang in AVAILABLE_LANGUAGES]
+    markup.add(*buttons)
     return markup
 
 @bot.message_handler(commands=['start'])
@@ -114,20 +122,13 @@ def handle_all_texts(message):
         elif state == 'WAITING_AGE':
             if text.isdigit() and 15 <= int(text) <= 99:
                 users_profile[user_id]['age'] = int(text)
-                markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-                markup.row(KeyboardButton("Bangla"), KeyboardButton("English"))
-                bot.send_message(user_id, "🗣️ Select your chatting **Language**:", reply_markup=markup)
+                bot.send_message(user_id, "🗣️ Select your chatting **Language** from below:", reply_markup=language_keyboard("reg_lang_"))
                 user_states[user_id] = 'WAITING_LANG'
             else:
                 bot.send_message(user_id, "⚠️ Please enter a valid age (numbers between 15 and 99):")
             return
         elif state == 'WAITING_LANG':
-            if text in ["Bangla", "English"]:
-                users_profile[user_id]['lang'] = text
-                del user_states[user_id]
-                bot.send_message(user_id, "🎉 Profile setup completed! You are now ready to chat.\n\n💡 Tap '⚙️ My Profile & Filters' to verify your profile pic or set partner filters.", reply_markup=main_menu_keyboard())
-            else:
-                bot.send_message(user_id, "⚠️ Please select 'Bangla' or 'English' from the buttons below.")
+            bot.send_message(user_id, "⚠️ Please tap one of the language buttons above.")
             return
         elif state == 'WAITING_TARGET_AGE_MIN':
             if text.isdigit():
@@ -199,23 +200,38 @@ def handle_all_texts(message):
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
     user_id = call.message.chat.id
+    data = call.data
+    
+    if data.startswith("reg_lang_"):
+        selected_lang = data.replace("reg_lang_", "").capitalize()
+        users_profile[user_id]['lang'] = selected_lang
+        bot.delete_message(user_id, call.message.message_id)
+        bot.send_message(user_id, "📸 **Face Verification Required:**\n\nPlease send a clear picture of yourself or a live face photo to complete setup.")
+        user_states[user_id] = 'WAITING_VERIFY_PIC'
+        return
+
+    if data.startswith("edit_lang_"):
+        selected_lang = data.replace("edit_lang_", "").capitalize()
+        users_profile[user_id]['lang'] = selected_lang
+        bot.delete_message(user_id, call.message.message_id)
+        bot.send_message(user_id, f"✅ Language updated to: **{selected_lang}**", parse_mode="Markdown")
+        show_profile(user_id)
+        return
+
     bot.delete_message(user_id, call.message.message_id)
     
-    if call.data == "edit_name":
+    if data == "edit_name":
         bot.send_message(user_id, "✍️ Enter your new name or nickname:")
         user_states[user_id] = 'WAITING_NAME'
-    elif call.data == "edit_age":
+    elif data == "edit_age":
         bot.send_message(user_id, "🎂 Enter your new age in numbers:")
         user_states[user_id] = 'WAITING_AGE'
-    elif call.data == "edit_lang":
-        markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        markup.row(KeyboardButton("Bangla"), KeyboardButton("English"))
-        bot.send_message(user_id, "🗣️ Change language:", reply_markup=markup)
-        user_states[user_id] = 'WAITING_LANG'
-    elif call.data == "edit_target_age":
+    elif data == "edit_lang":
+        bot.send_message(user_id, "🗣️ Choose your new language:", reply_markup=language_keyboard("edit_lang_"))
+    elif data == "edit_target_age":
         bot.send_message(user_id, "🎯 What is the **Minimum Age** (e.g., 18) you prefer for a partner?")
         user_states[user_id] = 'WAITING_TARGET_AGE_MIN'
-    elif call.data == "verify_pic":
+    elif data == "verify_pic":
         bot.send_message(user_id, "📸 **Face Verification:**\n\nPlease send a clear picture of yourself or a live face photo.")
         user_states[user_id] = 'WAITING_VERIFY_PIC'
 
