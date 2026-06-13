@@ -71,6 +71,34 @@ def match_users(user_id):
                 return True
     return False
 
+@bot.message_handler(content_types=['photo'])
+def handle_verification_photo(message):
+    user_id = message.chat.id
+    if user_id in user_states and user_states[user_id] == 'WAITING_VERIFY_PIC':
+        users_profile[user_id]['verified'] = True  
+        del user_states[user_id]
+        bot.send_message(user_id, "🎉 Thank you! Your picture has been received and your profile is now Verified.", reply_markup=main_menu_keyboard())
+        return
+        
+    if user_id in active_chats:
+        bot.send_photo(active_chats[user_id], message.photo[-1].file_id, caption=message.caption)
+    else:
+        bot.send_message(user_id, "⚠️ You are not currently connected to any chat.")
+
+@bot.message_handler(content_types=['sticker', 'voice', 'video'])
+def handle_other_media(message):
+    user_id = message.chat.id
+    if user_id in active_chats:
+        partner_id = active_chats[user_id]
+        if message.content_type == 'sticker':
+            bot.send_sticker(partner_id, message.sticker.file_id)
+        elif message.content_type == 'voice':
+            bot.send_voice(partner_id, message.voice.file_id)
+        elif message.content_type == 'video':
+            bot.send_video(partner_id, message.video.file_id)
+    else:
+        bot.send_message(user_id, "⚠️ You are not currently connected to any chat.")
+
 @bot.message_handler(func=lambda message: True)
 def handle_all_texts(message):
     user_id = message.chat.id
@@ -190,29 +218,6 @@ def handle_callback(call):
     elif call.data == "verify_pic":
         bot.send_message(user_id, "📸 **Face Verification:**\n\nPlease send a clear picture of yourself or a live face photo.")
         user_states[user_id] = 'WAITING_VERIFY_PIC'
-
-@bot.message_handler(content_types=['photo', 'sticker', 'voice', 'video'])
-def handle_media(message):
-    user_id = message.chat.id
-    
-    if user_id in user_states and user_states[user_id] == 'WAITING_VERIFY_PIC' and message.content_type == 'photo':
-        users_profile[user_id]['verified'] = True  
-        del user_states[user_id]
-        bot.send_message(user_id, "🎉 Thank you! Your picture has been received and your profile is now Verified.", reply_markup=main_menu_keyboard())
-        return
-
-    if user_id in active_chats:
-        partner_id = active_chats[user_id]
-        if message.content_type == 'photo':
-            bot.send_photo(partner_id, message.photo[-1].file_id, caption=message.caption)
-        elif message.content_type == 'sticker':
-            bot.send_sticker(partner_id, message.sticker.file_id)
-        elif message.content_type == 'voice':
-            bot.send_voice(partner_id, message.voice.file_id)
-        elif message.content_type == 'video':
-            bot.send_video(partner_id, message.video.file_id)
-    else:
-        bot.send_message(user_id, "⚠️ You are not currently connected to any chat.")
 
 if __name__ == "__main__":
     threading.Thread(target=bot.infinity_polling, daemon=True).start()
