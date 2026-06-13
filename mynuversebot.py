@@ -22,7 +22,7 @@ AVAILABLE_LANGUAGES = ["Bangla", "English", "Hindi", "Japanese", "Russian", "Ara
 
 MESSAGES = {
     'bangla': {
-        'start': "👋 Mnuverse Bot-এ আপনাকে স্বাগতম!\n\nচ্যাট শুরু করার আগে আপনার প্রোফাইল সেটআপ করতে হবে।\n\n📝 আপনার **নাম** বা একটি নিকনেম (Nickname) লিখুন:",
+        'start': "👋 Mnuverse Bot-এ আপনাকে স্বাগত!\n\nচ্যাট শুরু করার আগে আপনার প্রোফাইল সেটআপ করতে হবে।\n\n📝 আপনার **নাম** বা একটি নিকনেম (Nickname) লিখুন:",
         'already_reg': "🤖 আপনি অলরেডি রেজিস্টার্ড আছেন! নিচের মেনু ব্যবহার করুন.",
         'find': "🚀 Find Partner", 'next': "⏭️ Next Partner", 'stop': "🛑 Stop Chat", 'profile': "⚙️ My Profile & Filters", 'premium': "💎 Premium", 'help_btn': "❓ Help",
         'profile_txt': "⚙️ **Your Profile & Filters:**\n\n👤 Name: {name}\n🎂 Age: {age}\n🗣️ Language: {lang}\n🛡️ Verification: {status}\n🎯 Partner Age Range: {min_age} - {max_age} years\n\nনিচের বাটনে ক্লিক করে যেকোনো তথ্য পরিবর্তন করতে পারেন.",
@@ -131,7 +131,7 @@ MESSAGES = {
         'partner_stopped': "🛑 パートナーがチャットを終了しました。",
         'not_connected': "⚠️ 現在、どのチャットにも接続されていません。",
         'partner_left': "🛑 パートナーがチャットから退出しました。",
-        'premium_txt': "💎 **Premium Features:**\n\nプレミアム機能は開発中です。性別フィルター（男性/女性）は近日中に追加されます！",
+        'premium_txt': "💎 **Premium Features:**\n\nプレミアム機能は開発中です。性별フィルター（男性/女性）は近日中に追加されます！",
         'help_txt': "💡 **ヘルプガイド:**\n\n• チャットを開始するには「🚀 Find Partner」をタップします。\n• パートナーを変更するには「⏭️ Next Partner」をタップします。\n• 迷惑行為や不適切な行為は、アカウントの利用停止につながります。",
         'start_chat_alert': "⚠️ チャットを開始するには「🚀 Find Partner」をタップしてください。",
         'pic_verify_msg': "📸 **本人確認写真:**\n\nあなたの顔がはっきりと写っている写真、またはライブ撮影した写真を送信してください。",
@@ -243,7 +243,7 @@ MESSAGES = {
         'searching': "⏳ Recherche d'un partenaire, veuillez patienter...",
         'search_start': "🔍 Recherche d'un partenaire selon vos filtres...",
         'search_cancel': "🛑 Recherche de partenaire annulée.",
-        'you_stopped': "🛑 Vous avez arrêté le chat.",
+        'you_stopped': "🛑 Vous avez arrêté the chat.",
         'partner_stopped': "🛑 Votre partenaire a arrêté le chat.",
         'not_connected': "⚠️ Vous n'êtes actuellement connecté à aucun chat.",
         'partner_left': "🛑 Votre partenaire a quitté le chat.",
@@ -283,6 +283,39 @@ MESSAGES = {
         'pic_verify_success': "🎉 감사합니다! 사진이 전송되었으며 프로필 인증이 완료되었습니다."
     }
 }
+
+for lang in AVAILABLE_LANGUAGES:
+    l_key = lang.lower()
+    if l_key not in MESSAGES:
+        MESSAGES[l_key] = {
+            'start': f"👋 Welcome to Mnuverse Bot!\n\nBefore starting, you need to set up your profile.\n\n📝 Please enter your Name or a Nickname:",
+            'already_reg': "🤖 You are already registered! Use the menu below.",
+            'find': "🚀 Find Partner", 'next': "⏭️ Next Partner", 'stop': "🛑 Stop Chat", 'profile': "⚙️ My Profile & Filters", 'premium': "💎 Premium", 'help_btn': "❓ Help",
+            'profile_txt': f"⚙️ **Your Profile & Filters:**\n\n👤 Name: {{name}}\n🎂 Age: {{age}}\n🗣️ Language: {lang}\n🛡️ Verification: {{status}}\n🎯 Partner Age Range: {{min_age}} - {{max_age}} years\n\nClick the buttons below to change your information.",
+            'edit_name': "✍️ Edit Name", 'edit_age': "✍️ Edit Age", 'edit_lang': "🗣️ Edit Language", 'verify_pic': "📸 Verify Profile Pic", 'set_filter': "🎯 Set Partner Age Filter",
+            'partner_found': f"🎉 **Partner Found ({lang})!**\n👤 Name: {{name}}\n🎂 Age: {{age}}\n🗣️ Language: {{lang}}\n\nYou can chat now.",
+            'name_saved': "👍 Name saved: {{text}}\n\n🎂 Now enter your **Age** (Numbers only, e.g., 22):",
+            'select_lang': "🗣️ Select your chatting **Language** from below:",
+            'invalid_age': "⚠️ Please enter a valid age (numbers between 15 and 99):",
+            'invalid_lang_btn': "⚠️ Please tap one of the language buttons above.",
+            'enter_min_age': "🎯 What is the **Minimum Age** (e.g., 18) you prefer for a partner?",
+            'enter_max_age': "🎯 Now enter the **Maximum Age** of your partner (e.g., 30):",
+            'filter_updated': "✅ Partner age filter successfully updated!",
+            'invalid_num': "⚠️ Please enter a valid number:",
+            'already_chat': "⚠️ You are already in a chat!",
+            'searching': "⏳ Searching for a partner, please wait...",
+            'search_start': "🔍 Searching for a partner based on your filters...",
+            'search_cancel': "🛑 Partner search cancelled.",
+            'you_stopped': "🛑 You stopped the chat.",
+            'partner_stopped': "🛑 Your partner stopped the chat.",
+            'not_connected': "⚠️ You are not connected to any chat.",
+            'partner_left': "🛑 Your partner left the chat.",
+            'premium_txt': "💎 **Premium Features:**\n\nPremium features are under development. Direct gender filters (Male/Female) will be added very soon!",
+            'help_txt': "💡 **Help Guide:**\n\n• Tap '🚀 Find Partner' to start a chat.\n• Tap '⏭️ Next Partner' to change partner.\n• Any abusive or inappropriate behavior will lead to an account ban.",
+            'start_chat_alert': "⚠️ Tap '🚀 Find Partner' to start a chat.",
+            'pic_verify_msg': "📸 **Face Verification:**\n\nPlease send a clear picture of yourself or a live face photo.",
+            'pic_verify_success': "🎉 Thank you! Your picture has been received and your profile is now Verified."
+        }
 
 def get_msg(user_id, key):
     user_lang = users_profile.get(user_id, {}).get('lang', 'english')
@@ -331,12 +364,15 @@ def match_users(user_id):
     for potential_partner in waiting_room:
         if potential_partner != user_id:
             partner_p = users_profile[potential_partner]
+            
             if (p['target_age_min'] <= partner_p['age'] <= p['target_age_max']) and \
                (partner_p['target_age_min'] <= p['age'] <= partner_p['target_age_max']) and \
                (p['lang'] == partner_p['lang']):
+                
                 waiting_room.remove(potential_partner)
                 if user_id in waiting_room:
                     waiting_room.remove(user_id)
+                    
                 active_chats[user_id] = potential_partner
                 active_chats[potential_partner] = user_id
                 
