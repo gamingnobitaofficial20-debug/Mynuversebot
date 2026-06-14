@@ -19,6 +19,15 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 PORT = int(os.environ.get('PORT', 10000))
 
+print("="*50)
+print("🤖 Bot is starting...")
+print(f"BOT_TOKEN: {'SET' if BOT_TOKEN else 'NOT SET'}")
+print("="*50)
+
+if not BOT_TOKEN:
+    print("ERROR: BOT_TOKEN not found in environment variables!")
+    exit(1)
+
 # ============ STATES ============
 class RegState(Enum):
     WAITING_NAME = 1
@@ -69,12 +78,12 @@ MESSAGES = {
         'help_btn': "❓ Help",
         'settings': "⚙️ Settings",
         'change_lang': "🌐 Language",
-        'profile_txt': "👤 {name}\n🎂 {age}\n🗣️ {lang}\n⚥ {gender}\n🎯 {looking_for}\n🛡️ {status}\n💎 {premium_status}\n📊 Matches: {matches_used}/{matches_limit}",
+        'profile_txt': "👤 {name}\n🎂 {age}\n🗣️ {lang}\n⚥ {gender}\n🎯 {looking_for}\n🛡️ {status}\n💎 {premium_status}",
         'partner_found': "🎉 Partner: {name}\nAge: {age}\nLanguage: {lang}\nGender: {gender}",
         'name_saved': "👍 Name: {text}\n🎂 Send Age:",
         'select_lang': "🗣️ Select Language:",
         'select_gender': "⚥ Select Gender (Permanent):",
-        'select_looking': "🎯 Looking for?\n💡 Free: 5 matches then random",
+        'select_looking': "🎯 Looking for?",
         'invalid_age': "⚠️ Valid age 15-99:",
         'enter_min_age': "🎯 Min age (18-99):",
         'enter_max_age': "🎯 Max age (18-99):",
@@ -88,8 +97,8 @@ MESSAGES = {
         'not_connected': "⚠️ Not connected",
         'partner_left': "🛑 Partner left",
         'premium_txt': "💎 Premium Packages:\n⭐39/24H ⭐149/3D ⭐249/5D ⭐379/7D ⭐499/14D ⭐799/30D",
-        'premium_purchase_success': "🎉 Premium Activated!\nPackage: {package}\nDays: {days}\nExpires: {expiry}",
-        'help_txt': "💡 Free: 5 matches/day → random\nPremium: Unlimited matches",
+        'premium_purchase_success': "🎉 Premium Activated!\nPackage: {package}\nDays: {days}",
+        'help_txt': "💡 Help: /start",
         'pic_verify_msg': "📸 Send your photo:",
         'pic_verify_success': "🎉 Verified!",
         'edit_name': "✍️ Name",
@@ -97,13 +106,12 @@ MESSAGES = {
         'verify_pic': "📸 Verify",
         'set_filter': "🎯 Filter",
         'gender_locked': "🔒 Gender locked: {gender}",
-        'profile_complete': "✅ Profile complete! Gender locked: {gender}",
+        'profile_complete': "✅ Profile complete!",
         'language_changed': "✅ Language: {language}",
         'select_new_lang': "🌐 Select language:",
         'settings_menu': "⚙️ Settings:",
         'welcome': "👋 Welcome!",
         'back': "🔙 Back",
-        'male': "Male", 'female': "Female", 'gay': "Gay", 'lesbian': "Lesbian", 'everyone': "Everyone"
     },
     'bangla': {
         'start': "👋 নাম লিখুন:",
@@ -116,11 +124,11 @@ MESSAGES = {
         'settings': "⚙️ সেটিংস",
         'change_lang': "🌐 ভাষা",
         'select_lang': "🗣️ ভাষা নির্বাচন:",
-        'select_gender': "⚥ লিঙ্গ নির্বাচন (স্থায়ী):",
+        'select_gender': "⚥ লিঙ্গ নির্বাচন:",
         'pic_verify_msg': "📸 ছবি পাঠান:",
         'pic_verify_success': "🎉 ভেরিফাইড!",
         'gender_locked': "🔒 লিঙ্গ লক: {gender}",
-        'profile_complete': "✅ প্রোফাইল সম্পূর্ণ! লিঙ্গ লক: {gender}",
+        'profile_complete': "✅ প্রোফাইল সম্পূর্ণ!",
         'language_changed': "✅ ভাষা: {language}",
         'welcome': "👋 স্বাগতম!",
     },
@@ -135,17 +143,16 @@ MESSAGES = {
         'settings': "⚙️ सेटिंग्स",
         'change_lang': "🌐 भाषा",
         'select_lang': "🗣️ भाषा चुनें:",
-        'select_gender': "⚥ लिंग चुनें (स्थायी):",
+        'select_gender': "⚥ लिंग चुनें:",
         'pic_verify_msg': "📸 फोटो भेजें:",
         'pic_verify_success': "🎉 सत्यापित!",
         'gender_locked': "🔒 लिंग लॉक: {gender}",
-        'profile_complete': "✅ प्रोफाइल पूरा! लिंग लॉक: {gender}",
+        'profile_complete': "✅ प्रोफाइल पूरा!",
         'language_changed': "✅ भाषा: {language}",
         'welcome': "👋 स्वागत है!",
     }
 }
 
-# ============ HELPER FUNCTIONS ============
 def get_msg(user_id: int, key: str, **kwargs) -> str:
     user_lang = users_profile.get(user_id, {}).get('lang', 'english')
     if user_lang not in MESSAGES:
@@ -168,41 +175,13 @@ def is_gender_locked(user_id: int) -> bool:
     p = users_profile.get(user_id, {})
     return all([p.get('name'), p.get('age'), p.get('gender'), p.get('looking_for'), p.get('verified')])
 
-def get_today_matches(user_id: int) -> int:
-    if user_id not in user_match_tracking:
-        user_match_tracking[user_id] = {'count': 0, 'date': datetime.now().date()}
-    today = datetime.now().date()
-    if user_match_tracking[user_id]['date'] != today:
-        user_match_tracking[user_id] = {'count': 0, 'date': today}
-    return user_match_tracking[user_id]['count']
-
-def get_match_limit(user_id: int, looking_for: str) -> int:
-    if is_premium(user_id):
-        return float('inf')
-    limits = {'male': 5, 'female': 5, 'gay': 3, 'lesbian': 3, 'everyone': float('inf')}
-    return limits.get(looking_for.lower(), 5)
-
-def can_use_preference_match(user_id: int, looking_for: str) -> bool:
-    if is_premium(user_id) or looking_for.lower() == 'everyone':
-        return True
-    return get_today_matches(user_id) < get_match_limit(user_id, looking_for)
-
-def increment_match_count(user_id: int):
-    if is_premium(user_id):
-        return
-    today = datetime.now().date()
-    if user_id not in user_match_tracking:
-        user_match_tracking[user_id] = {'count': 0, 'date': today}
-    if user_match_tracking[user_id]['date'] != today:
-        user_match_tracking[user_id] = {'count': 0, 'date': today}
-    user_match_tracking[user_id]['count'] += 1
-
-# ============ KEYBOARDS ============
 def main_menu(user_id: int):
     btn = lambda k: KeyboardButton(get_msg(user_id, k))
     return ReplyKeyboardMarkup([
-        [btn('find'), btn('next')], [btn('stop'), btn('profile')],
-        [btn('premium'), btn('settings')], [btn('help_btn')]
+        [btn('find'), btn('next')],
+        [btn('stop'), btn('profile')],
+        [btn('premium'), btn('settings')],
+        [btn('help_btn')]
     ], resize_keyboard=True)
 
 def lang_keyboard():
@@ -225,22 +204,13 @@ def gender_keyboard():
     ])
 
 def looking_keyboard(user_id, prefix):
-    kb = []
-    if is_premium(user_id):
-        kb = [
-            [InlineKeyboardButton("👧 Girls", callback_data=f"{prefix}female")],
-            [InlineKeyboardButton("👦 Boys", callback_data=f"{prefix}male")],
-            [InlineKeyboardButton("🏳️‍🌈 Gay", callback_data=f"{prefix}gay")],
-            [InlineKeyboardButton("🏳️‍🌈 Lesbian", callback_data=f"{prefix}lesbian")],
-            [InlineKeyboardButton("🌍 Everyone", callback_data=f"{prefix}everyone")]
-        ]
-    else:
-        kb = [
-            [InlineKeyboardButton("👧 Girls (5/day)", callback_data=f"{prefix}female")],
-            [InlineKeyboardButton("👦 Boys (5/day)", callback_data=f"{prefix}male")],
-            [InlineKeyboardButton("🌍 Random (Unlimited)", callback_data=f"{prefix}everyone")],
-            [InlineKeyboardButton("💎 Get Premium", callback_data="show_premium")]
-        ]
+    kb = [
+        [InlineKeyboardButton("👧 Girls", callback_data=f"{prefix}female")],
+        [InlineKeyboardButton("👦 Boys", callback_data=f"{prefix}male")],
+        [InlineKeyboardButton("🌍 Everyone", callback_data=f"{prefix}everyone")],
+    ]
+    if not is_premium(user_id):
+        kb.append([InlineKeyboardButton("💎 Get Premium", callback_data="show_premium")])
     return InlineKeyboardMarkup(kb)
 
 def premium_keyboard():
@@ -261,62 +231,6 @@ def settings_keyboard(user_id):
         [InlineKeyboardButton("🔙 Back", callback_data="back")]
     ])
 
-# ============ MATCHING ============
-async def match_users(user_id: int, context: ContextTypes.DEFAULT_TYPE):
-    user = users_profile[user_id]
-    user_looking = user.get('looking_for', 'everyone').lower()
-    user_can_prefer = can_use_preference_match(user_id, user_looking)
-    
-    for pid in waiting_room[:]:
-        if pid == user_id:
-            continue
-        partner = users_profile.get(pid)
-        if not partner:
-            waiting_room.remove(pid)
-            continue
-        
-        if not (user['target_age_min'] <= partner['age'] <= user['target_age_max'] and
-                partner['target_age_min'] <= user['age'] <= partner['target_age_max']):
-            continue
-        
-        if user['lang'] != partner['lang']:
-            continue
-        
-        partner_looking = partner.get('looking_for', 'everyone').lower()
-        partner_can_prefer = can_use_preference_match(pid, partner_looking)
-        
-        gender_match = False
-        if not user_can_prefer or not partner_can_prefer or user_looking == 'everyone' or partner_looking == 'everyone':
-            gender_match = True
-        else:
-            user_gen = user.get('gender', '').lower()
-            partner_gen = partner.get('gender', '').lower()
-            if user_looking == 'female' and partner_looking == 'male' and user_gen == 'male' and partner_gen == 'female':
-                gender_match = True
-            elif user_looking == 'male' and partner_looking == 'female' and user_gen == 'female' and partner_gen == 'male':
-                gender_match = True
-        
-        if gender_match:
-            waiting_room.remove(pid)
-            if user_id in waiting_room:
-                waiting_room.remove(user_id)
-            
-            if user_can_prefer and user_looking != 'everyone':
-                increment_match_count(user_id)
-            if partner_can_prefer and partner_looking != 'everyone':
-                increment_match_count(pid)
-            
-            active_chats[user_id] = pid
-            active_chats[pid] = user_id
-            
-            await context.bot.send_message(user_id, get_msg(user_id, 'partner_found').format(
-                name=partner['name'], age=partner['age'], lang=partner['lang'], gender=partner.get('gender', '')))
-            await context.bot.send_message(pid, get_msg(pid, 'partner_found').format(
-                name=user['name'], age=user['age'], lang=user['lang'], gender=user.get('gender', '')))
-            return True
-    return False
-
-# ============ HANDLERS ============
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     if uid not in users_profile:
@@ -350,13 +264,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(get_msg(uid, 'invalid_age'))
             return
         elif state == RegState.WAITING_TARGET_AGE_MIN:
-            if text.isdigit() and 18 <= int(text) <= 99:
+            if text.isdigit():
                 users_profile[uid]['target_age_min'] = int(text)
                 await update.message.reply_text(get_msg(uid, 'enter_max_age'))
                 user_states[uid] = RegState.WAITING_TARGET_AGE_MAX
             return
         elif state == RegState.WAITING_TARGET_AGE_MAX:
-            if text.isdigit() and int(text) > users_profile[uid]['target_age_min']:
+            if text.isdigit():
                 users_profile[uid]['target_age_max'] = int(text)
                 del user_states[uid]
                 await update.message.reply_text(get_msg(uid, 'filter_updated'), reply_markup=main_menu(uid))
@@ -388,7 +302,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         waiting_room.append(uid)
         await update.message.reply_text(get_msg(uid, 'search_start'))
-        await match_users(uid, context)
     elif cmd in ["🛑 Stop Chat", stop_cmd]:
         if uid in waiting_room:
             waiting_room.remove(uid)
@@ -405,15 +318,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             del active_chats[pid]
             await context.bot.send_message(pid, get_msg(pid, 'partner_left'))
         waiting_room.append(uid)
-        await match_users(uid, context)
+        await update.message.reply_text(get_msg(uid, 'search_start'))
     elif cmd in ["⚙️ Profile", profile_cmd]:
         p = users_profile[uid]
         await update.message.reply_text(get_msg(uid, 'profile_txt').format(
             name=p['name'], age=p['age'], lang=p['lang'], gender=p.get('gender', 'Not Set'),
             looking_for=p.get('looking_for', 'everyone'), status="✅" if p['verified'] else "❌",
-            premium_status="✅" if is_premium(uid) else "❌",
-            matches_used=str(get_today_matches(uid)) if not is_premium(uid) else "∞",
-            matches_limit="∞" if is_premium(uid) else "5"))
+            premium_status="✅" if is_premium(uid) else "❌"))
     elif cmd in ["💎 Premium", premium_cmd]:
         await update.message.reply_text(get_msg(uid, 'premium_txt'), reply_markup=premium_keyboard())
     elif cmd in ["⚙️ Settings", settings_cmd]:
@@ -430,10 +341,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if uid in user_states and user_states[uid] == RegState.WAITING_VERIFY_PIC:
         users_profile[uid]['verified'] = True
         del user_states[uid]
-        if is_gender_locked(uid):
-            await update.message.reply_text(get_msg(uid, 'profile_complete').format(gender=users_profile[uid]['gender']), reply_markup=main_menu(uid))
-        else:
-            await update.message.reply_text(get_msg(uid, 'pic_verify_success'), reply_markup=main_menu(uid))
+        await update.message.reply_text(get_msg(uid, 'pic_verify_success'), reply_markup=main_menu(uid))
     elif uid in active_chats:
         await context.bot.send_photo(active_chats[uid], update.message.photo[-1].file_id)
 
@@ -457,8 +365,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         gender = "Male" if "male" in data else "Female"
         users_profile[uid]['gender'] = gender
-        await query.edit_message_text(get_msg(uid, 'select_looking').format(gender_limit=5))
-        await query.message.reply_text(get_msg(uid, 'select_looking').format(gender_limit=5), reply_markup=looking_keyboard(uid, "look_"))
+        await query.edit_message_text(get_msg(uid, 'select_looking'))
+        await query.message.reply_text(get_msg(uid, 'select_looking'), reply_markup=looking_keyboard(uid, "look_"))
         user_states[uid] = RegState.WAITING_LOOKING
         return
     if data.startswith("look_"):
@@ -513,12 +421,13 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
         if pkg:
             expiry = datetime.now() + timedelta(days=pkg['days'])
             users_profile[uid]['premium_expiry'] = expiry.strftime("%Y-%m-%d %H:%M:%S")
-            await update.message.reply_text(get_msg(uid, 'premium_purchase_success').format(
-                package=pkg['name'], days=pkg['days'], expiry=expiry.strftime('%d %b %Y')), reply_markup=main_menu(uid))
+            await update.message.reply_text(get_msg(uid, 'premium_purchase_success').format(package=pkg['name'], days=pkg['days']), reply_markup=main_menu(uid))
 
 # ============ MAIN ============
 async def main():
+    print("🚀 Starting application...")
     application = Application.builder().token(BOT_TOKEN).build()
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(PreCheckoutQueryHandler(pre_checkout))
@@ -526,9 +435,12 @@ async def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     
-    print("🤖 Bot Started!")
-    await application.run_webhook(listen="0.0.0.0", port=PORT, webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'localhost')}/webhook")
+    print("✅ Bot is ready!")
+    await application.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'localhost')}/webhook"
+    )
 
 if __name__ == '__main__':
-    import asyncio
     asyncio.run(main())
